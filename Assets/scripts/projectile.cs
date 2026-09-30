@@ -7,7 +7,8 @@ public class Projectile : MonoBehaviour
         Normal,
         Purple,
         Red,
-        Yellow
+        Yellow,
+        Blue
     }
 
     public ProjectileType projectileType = ProjectileType.Normal;

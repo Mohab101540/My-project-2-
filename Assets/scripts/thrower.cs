@@ -7,7 +7,8 @@ public class Thrower : MonoBehaviour
         Main,
         Red,
         Purple,
-        Yellow
+        Yellow,
+        Blue
     }
 
     [Header("Thrower Type")]
@@ -18,6 +19,7 @@ public class Thrower : MonoBehaviour
     public GameObject purpleProjectile;
     public GameObject redProjectile;
     public GameObject yellowProjectile;
+    public GameObject blueProjectile;
 
     public Transform player;
     public Transform throwPoint;
@@ -26,6 +28,8 @@ public class Thrower : MonoBehaviour
     public float throwForce = 12f;
     public float purpleThrowForce = 28f;
     public float yellowThrowForce = 12f;
+    public float blueThrowForce = 5f;
+
     public float throwInterval = 2.5f;
     public float warningTime = 0.7f;
 
@@ -33,6 +37,7 @@ public class Thrower : MonoBehaviour
     public bool purpleUnlocked = false;
     public bool redUnlocked = false;
     public bool yellowUnlocked = false;
+    public bool blueUnlocked = false;
 
     private float throwTimer;
     private bool gameOver = false;
@@ -102,6 +107,13 @@ public class Thrower : MonoBehaviour
             force = yellowThrowForce;
         }
 
+        // BLUE THROWER
+        else if (throwerType == ThrowerType.Blue)
+        {
+            projectileToThrow = blueProjectile;
+            force = blueThrowForce;
+        }
+
         // MAIN THROWER
         else
         {
@@ -126,6 +138,13 @@ public class Thrower : MonoBehaviour
             {
                 projectileToThrow = yellowProjectile;
                 force = yellowThrowForce;
+            }
+
+            // BLUE = 15% chance
+            else if (blueUnlocked && randomType < 85)
+            {
+                projectileToThrow = blueProjectile;
+                force = blueThrowForce;
             }
 
             // NORMAL = remaining chance
@@ -175,6 +194,12 @@ public class Thrower : MonoBehaviour
     {
         yellowUnlocked = true;
         Debug.Log("YELLOW PROJECTILE UNLOCKED!");
+    }
+
+    public void UnlockBlue()
+    {
+        blueUnlocked = true;
+        Debug.Log("BLUE PROJECTILE UNLOCKED!");
     }
 
     public void StopThrowing()
