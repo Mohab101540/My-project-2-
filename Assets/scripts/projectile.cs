@@ -6,7 +6,8 @@ public class Projectile : MonoBehaviour
     {
         Normal,
         Purple,
-        Red
+        Red,
+        Yellow
     }
 
     public ProjectileType projectileType = ProjectileType.Normal;
@@ -16,13 +17,23 @@ public class Projectile : MonoBehaviour
     public float splitDelay = 0.6f;
     public float splitSpeed = 12f;
 
+    [Header("Yellow Projectile")]
+    public float yellowSplitDelay = 0.8f;
+    public float yellowSplitSpeed = 10f;
+    public float yellowSpreadAngle = 25f;
+
     private bool hasSplit = false;
 
     void Start()
     {
         if (projectileType == ProjectileType.Red)
         {
-            Invoke(nameof(Split), splitDelay);
+            Invoke(nameof(SplitRed), splitDelay);
+        }
+
+        if (projectileType == ProjectileType.Yellow)
+        {
+            Invoke(nameof(SplitYellow), yellowSplitDelay);
         }
     }
 
@@ -38,12 +49,14 @@ public class Projectile : MonoBehaviour
             }
         }
 
-        // Don't split from collision anymore.
-        // Red splits automatically after splitDelay.
         Destroy(gameObject);
     }
 
-    void Split()
+    // =========================
+    // RED - SPLITS INTO 3
+    // =========================
+
+    void SplitRed()
     {
         if (hasSplit)
             return;
@@ -76,8 +89,6 @@ public class Projectile : MonoBehaviour
             Vector3 direction =
                 Quaternion.Euler(0f, angle, 0f) * forwardDirection;
 
-            // Spawn slightly forward so the new projectile
-            // isn't inside the old projectile's collider.
             Vector3 spawnPosition =
                 transform.position + direction * 0.5f;
 
@@ -97,17 +108,93 @@ public class Projectile : MonoBehaviour
             }
         }
 
-        // Prevent the 3 new projectiles from immediately
-        // destroying each other.
-        for (int i = 0; i < spawnedProjectiles.Length; i++)
+        IgnoreProjectileCollisions(spawnedProjectiles);
+
+        Debug.Log("RED PROJECTILE SPLIT INTO 3!");
+
+        Destroy(gameObject);
+    }
+
+    // =========================
+    // YELLOW - SPLITS INTO 5
+    // =========================
+
+    void SplitYellow()
+    {
+        if (hasSplit)
+            return;
+
+        hasSplit = true;
+
+        Debug.Log("YELLOW PROJECTILE SPLITTING INTO 5!");
+
+        if (normalProjectilePrefab == null)
+        {
+            Debug.LogError("YELLOW PROJECTILE: Normal Projectile Prefab is NOT assigned!");
+            return;
+        }
+
+        Rigidbody originalRb = GetComponent<Rigidbody>();
+
+        Vector3 forwardDirection = Vector3.forward;
+
+        if (originalRb != null && originalRb.linearVelocity.sqrMagnitude > 0.01f)
+        {
+            forwardDirection = originalRb.linearVelocity.normalized;
+        }
+
+        GameObject[] spawnedProjectiles = new GameObject[5];
+
+        for (int i = 0; i < 5; i++)
+        {
+            float angle = -yellowSpreadAngle * 2f
+                        + (i * yellowSpreadAngle);
+
+            Vector3 direction =
+                Quaternion.Euler(0f, angle, 0f) * forwardDirection;
+
+            Vector3 spawnPosition =
+                transform.position + direction * 0.5f;
+
+            GameObject splitProjectile = Instantiate(
+                normalProjectilePrefab,
+                spawnPosition,
+                Quaternion.identity
+            );
+
+            spawnedProjectiles[i] = splitProjectile;
+
+            Rigidbody rb = splitProjectile.GetComponent<Rigidbody>();
+
+            if (rb != null)
+            {
+                rb.linearVelocity =
+                    direction.normalized * yellowSplitSpeed;
+            }
+        }
+
+        IgnoreProjectileCollisions(spawnedProjectiles);
+
+        Debug.Log("YELLOW PROJECTILE SPLIT INTO 5!");
+
+        Destroy(gameObject);
+    }
+
+    // =========================
+    // IGNORE SPLIT COLLISIONS
+    // =========================
+
+    void IgnoreProjectileCollisions(GameObject[] projectiles)
+    {
+        for (int i = 0; i < projectiles.Length; i++)
         {
             Collider colliderA =
-                spawnedProjectiles[i].GetComponent<Collider>();
+                projectiles[i].GetComponent<Collider>();
 
-            for (int j = i + 1; j < spawnedProjectiles.Length; j++)
+            for (int j = i + 1; j < projectiles.Length; j++)
             {
                 Collider colliderB =
-                    spawnedProjectiles[j].GetComponent<Collider>();
+                    projectiles[j].GetComponent<Collider>();
 
                 if (colliderA != null && colliderB != null)
                 {
@@ -115,9 +202,5 @@ public class Projectile : MonoBehaviour
                 }
             }
         }
-
-        Debug.Log("RED PROJECTILE SPLIT INTO 3!");
-
-        Destroy(gameObject);
     }
 }

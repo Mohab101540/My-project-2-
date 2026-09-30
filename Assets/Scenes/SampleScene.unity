@@ -388,14 +388,17 @@ MonoBehaviour:
   normalProjectile: {fileID: 2755783925770746658, guid: 6dab33d2025eee842bf47478b6963651, type: 3}
   purpleProjectile: {fileID: 2755783925770746658, guid: f95ad0a6c5789954bb16b97fddc57036, type: 3}
   redProjectile: {fileID: 2755783925770746658, guid: 0766d0ac3dafe1c489bc7009effbc10f, type: 3}
+  yellowProjectile: {fileID: 2755783925770746658, guid: 465e23dce2c695c41a8353d3af756e45, type: 3}
   player: {fileID: 1772871776}
   throwPoint: {fileID: 1112619903}
   throwForce: 12
   purpleThrowForce: 28
+  yellowThrowForce: 12
   throwInterval: 2
   warningTime: 0.7
   purpleUnlocked: 0
   redUnlocked: 0
+  yellowUnlocked: 1
 --- !u!1 &142584907
 GameObject:
   m_ObjectHideFlags: 0
@@ -432,14 +435,17 @@ MonoBehaviour:
   normalProjectile: {fileID: 2755783925770746658, guid: 6dab33d2025eee842bf47478b6963651, type: 3}
   purpleProjectile: {fileID: 2755783925770746658, guid: f95ad0a6c5789954bb16b97fddc57036, type: 3}
   redProjectile: {fileID: 2755783925770746658, guid: 0766d0ac3dafe1c489bc7009effbc10f, type: 3}
+  yellowProjectile: {fileID: 0}
   player: {fileID: 1772871776}
   throwPoint: {fileID: 470171414}
   throwForce: 12
   purpleThrowForce: 28
+  yellowThrowForce: 12
   throwInterval: 2
   warningTime: 0.7
   purpleUnlocked: 0
   redUnlocked: 0
+  yellowUnlocked: 0
 --- !u!136 &142584909
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1763,14 +1769,17 @@ MonoBehaviour:
   normalProjectile: {fileID: 2755783925770746658, guid: 6dab33d2025eee842bf47478b6963651, type: 3}
   purpleProjectile: {fileID: 2755783925770746658, guid: f95ad0a6c5789954bb16b97fddc57036, type: 3}
   redProjectile: {fileID: 2755783925770746658, guid: 0766d0ac3dafe1c489bc7009effbc10f, type: 3}
+  yellowProjectile: {fileID: 0}
   player: {fileID: 1772871776}
   throwPoint: {fileID: 1747468006}
   throwForce: 12
   purpleThrowForce: 28
+  yellowThrowForce: 12
   throwInterval: 2
   warningTime: 0.7
   purpleUnlocked: 0
   redUnlocked: 0
+  yellowUnlocked: 0
 --- !u!136 &1664781001
 CapsuleCollider:
   m_ObjectHideFlags: 0

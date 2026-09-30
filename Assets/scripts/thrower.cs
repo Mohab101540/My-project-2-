@@ -6,7 +6,8 @@ public class Thrower : MonoBehaviour
     {
         Main,
         Red,
-        Purple
+        Purple,
+        Yellow
     }
 
     [Header("Thrower Type")]
@@ -16,6 +17,7 @@ public class Thrower : MonoBehaviour
     public GameObject normalProjectile;
     public GameObject purpleProjectile;
     public GameObject redProjectile;
+    public GameObject yellowProjectile;
 
     public Transform player;
     public Transform throwPoint;
@@ -23,12 +25,14 @@ public class Thrower : MonoBehaviour
     [Header("Throw Settings")]
     public float throwForce = 12f;
     public float purpleThrowForce = 28f;
+    public float yellowThrowForce = 12f;
     public float throwInterval = 2.5f;
     public float warningTime = 0.7f;
 
     [Header("Unlocked Projectiles")]
     public bool purpleUnlocked = false;
     public bool redUnlocked = false;
+    public bool yellowUnlocked = false;
 
     private float throwTimer;
     private bool gameOver = false;
@@ -91,21 +95,40 @@ public class Thrower : MonoBehaviour
             force = purpleThrowForce;
         }
 
+        // YELLOW THROWER
+        else if (throwerType == ThrowerType.Yellow)
+        {
+            projectileToThrow = yellowProjectile;
+            force = yellowThrowForce;
+        }
+
         // MAIN THROWER
         else
         {
             int randomType = Random.Range(0, 100);
 
+            // RED = 20% chance
             if (redUnlocked && randomType < 20)
             {
                 projectileToThrow = redProjectile;
                 force = throwForce;
             }
+
+            // PURPLE = 30% chance
             else if (purpleUnlocked && randomType < 50)
             {
                 projectileToThrow = purpleProjectile;
                 force = purpleThrowForce;
             }
+
+            // YELLOW = 20% chance
+            else if (yellowUnlocked && randomType < 70)
+            {
+                projectileToThrow = yellowProjectile;
+                force = yellowThrowForce;
+            }
+
+            // NORMAL = remaining chance
             else
             {
                 projectileToThrow = normalProjectile;
@@ -146,6 +169,12 @@ public class Thrower : MonoBehaviour
     {
         redUnlocked = true;
         Debug.Log("RED PROJECTILE UNLOCKED!");
+    }
+
+    public void UnlockYellow()
+    {
+        yellowUnlocked = true;
+        Debug.Log("YELLOW PROJECTILE UNLOCKED!");
     }
 
     public void StopThrowing()
