@@ -410,7 +410,7 @@ MonoBehaviour:
   redUnlocked: 0
   yellowUnlocked: 0
   blueUnlocked: 0
-  bouncerUnlocked: 1
+  bouncerUnlocked: 0
 --- !u!1 &142584907
 GameObject:
   m_ObjectHideFlags: 0
