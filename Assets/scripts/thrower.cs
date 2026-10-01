@@ -8,7 +8,8 @@ public class Thrower : MonoBehaviour
         Red,
         Purple,
         Yellow,
-        Blue
+        Blue,
+        Bouncer
     }
 
     [Header("Thrower Type")]
@@ -20,6 +21,7 @@ public class Thrower : MonoBehaviour
     public GameObject redProjectile;
     public GameObject yellowProjectile;
     public GameObject blueProjectile;
+    public GameObject bouncerProjectile;
 
     public Transform player;
     public Transform throwPoint;
@@ -29,6 +31,7 @@ public class Thrower : MonoBehaviour
     public float purpleThrowForce = 28f;
     public float yellowThrowForce = 12f;
     public float blueThrowForce = 5f;
+    public float bouncerThrowForce = 10f;
 
     public float throwInterval = 2.5f;
     public float warningTime = 0.7f;
@@ -38,6 +41,7 @@ public class Thrower : MonoBehaviour
     public bool redUnlocked = false;
     public bool yellowUnlocked = false;
     public bool blueUnlocked = false;
+    public bool bouncerUnlocked = false;
 
     private float throwTimer;
     private bool gameOver = false;
@@ -114,6 +118,13 @@ public class Thrower : MonoBehaviour
             force = blueThrowForce;
         }
 
+        // BOUNCER THROWER
+        else if (throwerType == ThrowerType.Bouncer)
+        {
+            projectileToThrow = bouncerProjectile;
+            force = bouncerThrowForce;
+        }
+
         // MAIN THROWER
         else
         {
@@ -145,6 +156,13 @@ public class Thrower : MonoBehaviour
             {
                 projectileToThrow = blueProjectile;
                 force = blueThrowForce;
+            }
+
+            // BOUNCER = 10% chance
+            else if (bouncerUnlocked && randomType < 95)
+            {
+                projectileToThrow = bouncerProjectile;
+                force = bouncerThrowForce;
             }
 
             // NORMAL = remaining chance
@@ -200,6 +218,12 @@ public class Thrower : MonoBehaviour
     {
         blueUnlocked = true;
         Debug.Log("BLUE PROJECTILE UNLOCKED!");
+    }
+
+    public void UnlockBouncer()
+    {
+        bouncerUnlocked = true;
+        Debug.Log("BOUNCER PROJECTILE UNLOCKED!");
     }
 
     public void StopThrowing()

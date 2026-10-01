@@ -1,0 +1,16 @@
+newmtl skin
+Kd 0.72 0.45 0.30
+newmtl jacket
+Kd 0.10 0.12 0.16
+newmtl shirt
+Kd 0.65 0.65 0.62
+newmtl pants
+Kd 0.06 0.07 0.09
+newmtl boots
+Kd 0.025 0.025 0.03
+newmtl hair
+Kd 0.025 0.018 0.012
+newmtl eyes
+Kd 0.01 0.01 0.01
+newmtl mouth
+Kd 0.12 0.015 0.015
