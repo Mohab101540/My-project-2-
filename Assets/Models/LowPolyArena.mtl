@@ -1,0 +1,16 @@
+newmtl floor
+Kd 0.10 0.12 0.14
+newmtl floor_inset
+Kd 0.13 0.15 0.18
+newmtl floor_trim
+Kd 0.24 0.27 0.30
+newmtl wall
+Kd 0.12 0.14 0.17
+newmtl wall_base
+Kd 0.07 0.08 0.10
+newmtl wall_cap
+Kd 0.20 0.22 0.25
+newmtl wall_detail
+Kd 0.16 0.18 0.21
+newmtl corner
+Kd 0.22 0.24 0.27
