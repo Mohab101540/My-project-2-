@@ -153,3 +153,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b7c32faebda7be8419774973da2b48d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
+  projectileType: 0
+  normalProjectilePrefab: {fileID: 0}
+  splitDelay: 0.6
+  splitSpeed: 12
+  yellowSplitDelay: 0.8
+  yellowSplitSpeed: 10
+  yellowSpreadAngle: 25
+  bouncerDirectionChange: 25
+  bouncerMinSpeed: 7
+  bouncerMaxSpeed: 12
+  bouncerMaxBounces: 8
