@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour
         // BOSS: SCORE 100
         // =========================================
 
-        if (score >= 100f && !bossActive)
+        if (score >= 1000f && !bossActive)
         {
             SpawnBoss();
         }
@@ -131,7 +131,7 @@ public class GameManager : MonoBehaviour
         // BOSS: SCORE 200
         // =========================================
 
-        if (score >= 200f && bossActive)
+        if (score >= 2000f && bossActive)
         {
             DestroyBoss();
         }
@@ -140,7 +140,7 @@ public class GameManager : MonoBehaviour
         // EXTRA THROWERS: SCORE 1000
         // =========================================
 
-        if (score >= 300f && !extraThrowersActive)
+        if (score >= 100f && !extraThrowersActive)
         {
             extraThrowersActive = true;
 
@@ -163,7 +163,7 @@ public class GameManager : MonoBehaviour
         // EXTRA THROWERS: SCORE 1200
         // =========================================
 
-        if (score >= 400f && extraThrowersActive)
+        if (score >= 200f && extraThrowersActive)
         {
             extraThrowersActive = false;
 
