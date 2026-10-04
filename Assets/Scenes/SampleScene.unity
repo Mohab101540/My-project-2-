@@ -782,7 +782,8 @@ Transform:
   m_LocalPosition: {x: -10, y: 2.5, z: 0}
   m_LocalScale: {x: 1, y: 5, z: 20}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1058347087}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &330585543
@@ -1098,7 +1099,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &544839265
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1498,7 +1499,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07bfdbf16c0f71f4f82ada5b27b1623f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07bfdbf16c0f71f4f82ada5b27b1623f, type: 3}
       propertyPath: m_LocalScale.z
@@ -1868,12 +1869,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1058347083}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10, y: 2.5, z: 0}
-  m_LocalScale: {x: 1, y: 5, z: 20}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 20, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 306289584}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1112619902
 GameObject:
@@ -2860,7 +2861,6 @@ GameObject:
   - component: {fileID: 1772871779}
   - component: {fileID: 1772871778}
   - component: {fileID: 1772871777}
-  - component: {fileID: 1772871781}
   m_Layer: 0
   m_Name: Hamamayabro
   m_TagString: Player
@@ -2980,6 +2980,7 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1772871775}
   m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+<<<<<<< HEAD
 --- !u!54 &1772871781
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -3007,6 +3008,8 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+=======
+>>>>>>> edc12b2fbd62766e3196c9f2b435cfc60eb78e75
 --- !u!1 &1833378412
 GameObject:
   m_ObjectHideFlags: 0
@@ -3103,6 +3106,5 @@ SceneRoots:
   - {fileID: 1833378415}
   - {fileID: 1760062097}
   - {fileID: 306289584}
-  - {fileID: 1058347087}
   - {fileID: 817978653}
   - {fileID: 846830996}
