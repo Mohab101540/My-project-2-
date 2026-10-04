@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour
         // BOSS: SCORE 100
         // =========================================
 
-        if (score >= 1000f && !bossActive)
+        if (score >= 201f && !bossActive)
         {
             SpawnBoss();
         }
@@ -131,7 +131,7 @@ public class GameManager : MonoBehaviour
         // BOSS: SCORE 200
         // =========================================
 
-        if (score >= 2000f && bossActive)
+        if (score >= 301f && bossActive)
         {
             DestroyBoss();
         }
