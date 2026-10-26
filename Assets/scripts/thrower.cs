@@ -43,6 +43,16 @@ public class Thrower : MonoBehaviour
     public bool blueUnlocked = false;
     public bool bouncerUnlocked = false;
 
+    [Header("Explosive Lob")]
+    public bool explosiveUnlocked = false;
+    public float explosiveChance = 0.25f;
+    public float explosiveFlightTime = 1.3f;
+
+    [Header("Aiming")]
+    [Tooltip("Turn smoothly to face the player (used by the black turrets).")]
+    public bool turnToPlayer = false;
+    public float turnSpeed = 180f;
+
     private float throwTimer;
     private bool gameOver = false;
     private bool preparingThrow = false;
@@ -52,6 +62,22 @@ public class Thrower : MonoBehaviour
     {
         if (gameOver)
             return;
+
+        if (turnToPlayer && player != null)
+        {
+            Vector3 toPlayer = player.position - transform.position;
+            toPlayer.y = 0f;
+
+            if (toPlayer.sqrMagnitude > 0.01f)
+            {
+                transform.rotation =
+                    Quaternion.RotateTowards(
+                        transform.rotation,
+                        Quaternion.LookRotation(toPlayer),
+                        turnSpeed * Time.deltaTime
+                    );
+            }
+        }
 
         if (!preparingThrow)
         {
@@ -81,8 +107,6 @@ public class Thrower : MonoBehaviour
     {
         preparingThrow = true;
         preparationTimer = 0f;
-
-        Debug.Log(gameObject.name + " is preparing to throw!");
     }
 
     void ThrowProjectile()
@@ -128,6 +152,12 @@ public class Thrower : MonoBehaviour
         // MAIN THROWER
         else
         {
+            if (explosiveUnlocked && Random.value < explosiveChance)
+            {
+                ThrowExplosive();
+                return;
+            }
+
             int randomType = Random.Range(0, 100);
 
             // RED = 20% chance
@@ -194,6 +224,50 @@ public class Thrower : MonoBehaviour
         {
             rb.linearVelocity = direction * force;
         }
+    }
+
+    void ThrowExplosive()
+    {
+        if (normalProjectile == null)
+        {
+            Debug.LogError(gameObject.name + " has no normal projectile for the explosive lob!");
+            return;
+        }
+
+        GameObject projectile = Instantiate(
+            normalProjectile,
+            throwPoint.position,
+            Quaternion.identity
+        );
+
+        // Lands where the player stands now; the warning disc marks that spot.
+        Vector3 target = new Vector3(player.position.x, 0f, player.position.z);
+
+        Projectile explosive = projectile.GetComponent<Projectile>();
+
+        if (explosive != null)
+        {
+            explosive.projectileType = Projectile.ProjectileType.Explosive;
+            explosive.explosiveTarget = target;
+        }
+
+        Rigidbody rb = projectile.GetComponent<Rigidbody>();
+
+        if (rb != null)
+        {
+            rb.useGravity = true;
+
+            float t = explosiveFlightTime;
+
+            rb.linearVelocity =
+                (target - throwPoint.position) / t -
+                0.5f * Physics.gravity * t;
+        }
+    }
+
+    public void UnlockExplosive()
+    {
+        explosiveUnlocked = true;
     }
 
     public void UnlockPurple()

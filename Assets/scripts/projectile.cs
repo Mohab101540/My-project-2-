@@ -9,7 +9,8 @@ public class Projectile : MonoBehaviour
         Red,
         Yellow,
         Blue,
-        Bouncer
+        Bouncer,
+        Explosive
     }
 
     public ProjectileType projectileType = ProjectileType.Normal;
@@ -30,11 +31,34 @@ public class Projectile : MonoBehaviour
     public float bouncerMaxSpeed = 12f;
     public int bouncerMaxBounces = 8;
 
+    [Header("Explosive")]
+    public float explosionRadius = 1.8f;
+    public Color explosiveColor = new Color(1f, 0.45f, 0f);
+
+    // Set by the thrower before Start: where the lob lands.
+    [HideInInspector] public Vector3 explosiveTarget;
+
+    [Header("Cleanup")]
+    public float maxLifetime = 10f;
+
     private bool hasSplit = false;
     private int bounceCount = 0;
+    private bool exploded = false;
+    private GameObject warningRing;
 
     void Start()
     {
+        // Safety net for projectiles that escape the arena without hitting anything.
+        Destroy(gameObject, maxLifetime);
+
+        // Fast projectiles (purple ~28 m/s) can skip past the player with discrete collision.
+        Rigidbody rb = GetComponent<Rigidbody>();
+
+        if (rb != null)
+        {
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        }
+
         if (projectileType == ProjectileType.Red)
         {
             Invoke(nameof(SplitRed), splitDelay);
@@ -44,6 +68,17 @@ public class Projectile : MonoBehaviour
         {
             Invoke(nameof(SplitYellow), yellowSplitDelay);
         }
+
+        if (projectileType == ProjectileType.Explosive)
+        {
+            SetUpExplosive();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (warningRing != null)
+            Destroy(warningRing);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -67,6 +102,16 @@ public class Projectile : MonoBehaviour
         }
 
         // =========================
+        // EXPLOSIVE
+        // =========================
+
+        if (projectileType == ProjectileType.Explosive)
+        {
+            Explode();
+            return;
+        }
+
+        // =========================
         // BOUNCER
         // =========================
 
@@ -84,6 +129,69 @@ public class Projectile : MonoBehaviour
     }
 
     // =========================
+    // EXPLOSIVE - WARNING + BLAST
+    // =========================
+
+    void SetUpExplosive()
+    {
+        Rigidbody rb = GetComponent<Rigidbody>();
+
+        if (rb != null)
+            rb.useGravity = true;
+
+        transform.localScale *= 1.4f;
+
+        Renderer projectileRenderer = GetComponent<Renderer>();
+
+        if (projectileRenderer != null)
+            projectileRenderer.material.color = explosiveColor;
+
+        // Flat red disc on the floor where the lob will land.
+        warningRing = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        warningRing.name = "ExplosiveWarning";
+        Destroy(warningRing.GetComponent<Collider>());
+
+        warningRing.transform.position =
+            new Vector3(explosiveTarget.x, 0.02f, explosiveTarget.z);
+        warningRing.transform.localScale =
+            new Vector3(explosionRadius * 2f, 0.01f, explosionRadius * 2f);
+        warningRing.GetComponent<Renderer>().material.color =
+            new Color(0.8f, 0f, 0f);
+    }
+
+    void Explode()
+    {
+        if (exploded)
+            return;
+
+        exploded = true;
+
+        Vector3 center = transform.position;
+
+        foreach (Collider hit in Physics.OverlapSphere(center, explosionRadius))
+        {
+            if (hit.CompareTag("Player"))
+            {
+                GameManager gameManager =
+                    FindFirstObjectByType<GameManager>();
+
+                if (gameManager != null)
+                    gameManager.PlayerDied();
+
+                break;
+            }
+        }
+
+        GameObject hazard = new GameObject("Explosion");
+        hazard.transform.position = new Vector3(center.x, 0.03f, center.z);
+
+        ExplosionHazard explosion = hazard.AddComponent<ExplosionHazard>();
+        explosion.blastRadius = explosionRadius;
+
+        Destroy(gameObject);
+    }
+
+    // =========================
     // BOUNCER MOVEMENT
     // =========================
 
@@ -91,12 +199,8 @@ public class Projectile : MonoBehaviour
     {
         bounceCount++;
 
-        Debug.Log("BOUNCER BOUNCE #" + bounceCount);
-
         if (bounceCount >= bouncerMaxBounces)
         {
-            Debug.Log("BOUNCER EXPIRED");
-
             Destroy(gameObject);
             return;
         }
@@ -152,12 +256,6 @@ public class Projectile : MonoBehaviour
             verticalSpeed,
             rb.linearVelocity.z
         );
-
-        Debug.Log(
-            "BOUNCER changed direction by " +
-            randomAngle +
-            " degrees!"
-        );
     }
 
     // =========================
@@ -170,8 +268,6 @@ public class Projectile : MonoBehaviour
             return;
 
         hasSplit = true;
-
-        Debug.Log("RED PROJECTILE SPLITTING!");
 
         if (normalProjectilePrefab == null)
         {
@@ -237,10 +333,6 @@ public class Projectile : MonoBehaviour
             spawnedProjectiles
         );
 
-        Debug.Log(
-            "RED PROJECTILE SPLIT INTO 3!"
-        );
-
         Destroy(gameObject);
     }
 
@@ -254,10 +346,6 @@ public class Projectile : MonoBehaviour
             return;
 
         hasSplit = true;
-
-        Debug.Log(
-            "YELLOW PROJECTILE SPLITTING INTO 5!"
-        );
 
         if (normalProjectilePrefab == null)
         {
@@ -324,10 +412,6 @@ public class Projectile : MonoBehaviour
 
         IgnoreProjectileCollisions(
             spawnedProjectiles
-        );
-
-        Debug.Log(
-            "YELLOW PROJECTILE SPLIT INTO 5!"
         );
 
         Destroy(gameObject);

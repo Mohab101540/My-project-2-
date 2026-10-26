@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class BossController : MonoBehaviour
@@ -13,14 +14,40 @@ public class BossController : MonoBehaviour
     public float projectileSpeed = 16f;
     public float spawnOffset = 1f;
 
+    [Header("Telegraph")]
+    public float telegraphTime = 0.7f;
+    public Color telegraphColor = new Color(1f, 0.5f, 0f);
+    public float aimLineLength = 18f;
+    public float aimLineWidth = 0.15f;
+
+    [Header("Phase 2")]
+    public float phaseTwoIntervalMultiplier = 0.6f;
+    public float phaseTwoSpeedMultiplier = 1.2f;
+    public float phaseTwoTelegraphMultiplier = 0.7f;
+
+    private static readonly float[] SpreadAngles = { -50f, -25f, 0f, 25f, 50f };
+    private static readonly float[] BurstAngles = { 0f, -45f, 45f, -90f, 90f };
+    private static readonly float[] SingleAngle = { 0f };
+
     private int attackPattern = 0;
     private bool attacking = false;
     private bool stopped = false;
+    private bool phaseTwo = false;
     private float attackTimer = 0f;
+
+    private Renderer[] renderers;
+    private Color[] baseColors;
+    private readonly List<LineRenderer> aimLines = new List<LineRenderer>();
 
     void Start()
     {
         attackTimer = attackInterval;
+
+        renderers = GetComponentsInChildren<Renderer>();
+        baseColors = new Color[renderers.Length];
+
+        for (int i = 0; i < renderers.Length; i++)
+            baseColors[i] = renderers[i].material.color;
 
         // Automatically find the Player when the Boss spawns.
         if (player == null)
@@ -63,10 +90,20 @@ public class BossController : MonoBehaviour
     {
         attacking = true;
 
+        // Aim is locked when the telegraph starts, so the lines show exactly where shots go.
+        Vector3 aim = GetPlayerDirection();
+
+        float[] telegraphAngles =
+            attackPattern == 0 || attackPattern == 2 ? SpreadAngles
+            : attackPattern == 3 ? BurstAngles
+            : SingleAngle;
+
+        yield return Telegraph(aim, telegraphAngles);
+
         switch (attackPattern)
         {
             case 0:
-                SpreadAttack();
+                SpreadAttack(aim);
                 break;
 
             case 1:
@@ -74,15 +111,15 @@ public class BossController : MonoBehaviour
                 break;
 
             case 2:
-                SpreadAttack();
+                SpreadAttack(aim);
 
                 yield return new WaitForSeconds(0.2f);
 
-                SpreadAttack();
+                SpreadAttack(aim);
                 break;
 
             case 3:
-                BurstAttack();
+                BurstAttack(aim);
                 break;
 
             case 4:
@@ -98,22 +135,120 @@ public class BossController : MonoBehaviour
         attacking = false;
     }
 
-    void SpreadAttack()
+    // =========================
+    // TELEGRAPH
+    // =========================
+
+    IEnumerator Telegraph(Vector3 aim, float[] angles)
     {
-        Debug.Log("BOSS ATTACK: SPREAD");
+        ShowAimLines(aim, angles);
 
-        Vector3 direction = GetPlayerDirection();
+        float elapsed = 0f;
 
-        float[] angles =
+        while (elapsed < telegraphTime)
         {
-            -50f,
-            -25f,
-            0f,
-            25f,
-            50f
-        };
+            elapsed += Time.deltaTime;
+            SetGlow(Mathf.PingPong(elapsed * 6f, 1f));
+            yield return null;
+        }
 
-        foreach (float angle in angles)
+        SetGlow(0f);
+        HideAimLines();
+    }
+
+    void ShowAimLines(Vector3 aim, float[] angles)
+    {
+        // Drawn on the floor so the top-down camera reads them clearly.
+        Vector3 start = throwPoint.position;
+        start.y = 0.05f;
+
+        for (int i = 0; i < angles.Length; i++)
+        {
+            LineRenderer line = GetAimLine(i);
+            Vector3 direction = Quaternion.Euler(0f, angles[i], 0f) * aim;
+
+            line.SetPosition(0, start);
+            line.SetPosition(1, start + direction * aimLineLength);
+            line.enabled = true;
+        }
+    }
+
+    LineRenderer GetAimLine(int index)
+    {
+        while (aimLines.Count <= index)
+        {
+            GameObject lineObject = new GameObject("BossAimLine");
+            lineObject.transform.SetParent(transform, false);
+
+            LineRenderer line = lineObject.AddComponent<LineRenderer>();
+            line.positionCount = 2;
+            line.useWorldSpace = true;
+            line.startWidth = aimLineWidth;
+            line.endWidth = aimLineWidth;
+
+            // Reuse the boss material so the line renders under URP in builds too.
+            if (renderers.Length > 0)
+            {
+                line.material = new Material(renderers[0].sharedMaterial);
+                line.material.color = telegraphColor;
+            }
+
+            line.enabled = false;
+            aimLines.Add(line);
+        }
+
+        return aimLines[index];
+    }
+
+    void HideAimLines()
+    {
+        foreach (LineRenderer line in aimLines)
+        {
+            if (line != null)
+                line.enabled = false;
+        }
+    }
+
+    void SetGlow(float amount)
+    {
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] != null)
+            {
+                renderers[i].material.color =
+                    Color.Lerp(baseColors[i], telegraphColor, amount);
+            }
+        }
+    }
+
+    // =========================
+    // PHASE 2
+    // =========================
+
+    public void EnterPhaseTwo()
+    {
+        if (phaseTwo)
+            return;
+
+        phaseTwo = true;
+
+        attackInterval *= phaseTwoIntervalMultiplier;
+        projectileSpeed *= phaseTwoSpeedMultiplier;
+        telegraphTime *= phaseTwoTelegraphMultiplier;
+
+        for (int i = 0; i < baseColors.Length; i++)
+            baseColors[i] = Color.Lerp(baseColors[i], Color.red, 0.6f);
+
+        SetGlow(0f);
+    }
+
+    // =========================
+    // ATTACKS
+    // =========================
+
+    void SpreadAttack(Vector3 direction)
+    {
+        foreach (float angle in SpreadAngles)
         {
             Vector3 newDirection =
                 Quaternion.Euler(
@@ -128,8 +263,6 @@ public class BossController : MonoBehaviour
 
     IEnumerator RapidAttack()
     {
-        Debug.Log("BOSS ATTACK: RAPID FIRE");
-
         for (int i = 0; i < 8; i++)
         {
             Vector3 direction = GetPlayerDirection();
@@ -147,24 +280,9 @@ public class BossController : MonoBehaviour
         }
     }
 
-    void BurstAttack()
+    void BurstAttack(Vector3 playerDirection)
     {
-        Debug.Log("BOSS ATTACK: BURST");
-
-        Vector3 playerDirection =
-            GetPlayerDirection();
-
-        FireProjectile(playerDirection);
-
-        float[] angles =
-        {
-            -45f,
-            45f,
-            -90f,
-            90f
-        };
-
-        foreach (float angle in angles)
+        foreach (float angle in BurstAngles)
         {
             Vector3 direction =
                 Quaternion.Euler(
@@ -179,8 +297,6 @@ public class BossController : MonoBehaviour
 
     IEnumerator DeathBarrage()
     {
-        Debug.Log("BOSS ATTACK: DEATH BARRAGE");
-
         for (int i = 0; i < 15; i++)
         {
             Vector3 direction =
@@ -255,5 +371,9 @@ public class BossController : MonoBehaviour
     {
         stopped = true;
         StopAllCoroutines();
+        HideAimLines();
+
+        if (renderers != null)
+            SetGlow(0f);
     }
 }

@@ -26,20 +26,49 @@ public class GameManager : MonoBehaviour
     [Header("Milestone UI")]
     public GameObject milestoneText;
 
+    [Header("Collectibles")]
+    public float collectibleInterval = 4f;
+    public float collectibleValue = 25f;
+    public GameObject collectiblePrefab; // Assets/prefabs/Collectible
+
+    [Header("Progression (score)")]
+    public float blueUnlockScore = 75f;
+    public float bouncerUnlockScore = 125f;
+    public float explosiveUnlockScore = 150f;
+    public float bossScore = 201f;
+    public float bossPhaseTwoScore = 276f;
+    public float winScore = 351f;
+
+    [Header("Turrets")]
+    // The two Turret objects in the Hierarchy. Their Turret component starts disabled
+    // and is switched on at turretUnlockScore.
+    public Turret[] turrets;
+    public float turretUnlockScore = 50f;
+
     private float score;
+    private bool turretsSpawned = false;
+    private PlayerMovement playerMovement;
+    private float collectibleTimer = 0f;
     private bool gameOver = false;
 
     private bool purpleUnlocked = false;
     private bool redUnlocked = false;
 
     private bool extraThrowersActive = false;
+    private bool extraThrowersDone = false;
 
     private bool bossActive = false;
+    private bool bossPhaseTwo = false;
     private GameObject currentBoss;
 
     void Start()
     {
         score = 0f;
+
+        // The previous run froze time on game over / win.
+        Time.timeScale = 1f;
+
+        playerMovement = FindFirstObjectByType<PlayerMovement>();
 
         UpdateScoreUI();
 
@@ -74,6 +103,18 @@ public class GameManager : MonoBehaviour
         score += scorePerSecond * Time.deltaTime;
 
         UpdateScoreUI();
+
+        // =========================================
+        // COLLECTIBLES
+        // =========================================
+
+        collectibleTimer += Time.deltaTime;
+
+        if (collectibleTimer >= collectibleInterval)
+        {
+            collectibleTimer = 0f;
+            SpawnCollectible();
+        }
 
         // =========================================
         // MAIN THROWER DIFFICULTY
@@ -116,31 +157,76 @@ public class GameManager : MonoBehaviour
                     "RED PROJECTILE UNLOCKED!"
                 );
             }
+
+            if (score >= blueUnlockScore && !mainThrower.blueUnlocked)
+            {
+                mainThrower.UnlockBlue();
+            }
+
+            if (score >= bouncerUnlockScore && !mainThrower.bouncerUnlocked)
+            {
+                mainThrower.UnlockBouncer();
+                ShowMilestone("BOUNCERS!");
+            }
+
+            if (score >= explosiveUnlockScore && !mainThrower.explosiveUnlocked)
+            {
+                mainThrower.UnlockYellow();
+                mainThrower.UnlockExplosive();
+                ShowMilestone("EXPLOSIVES! WATCH THE RED CIRCLES");
+            }
+        }
+
+        // =========================================
+        // TURRETS
+        // =========================================
+
+        if (score >= turretUnlockScore && !turretsSpawned && !bossActive)
+        {
+            StartTurrets();
         }
 
         // =========================================
         // BOSS: SCORE 100
         // =========================================
 
-        if (score >= 201f && !bossActive)
+        if (score >= bossScore && !bossActive)
         {
+            // The boss fight runs alone so its patterns stay readable.
+            StopTurrets();
             SpawnBoss();
+        }
+
+        if (score >= bossPhaseTwoScore && bossActive && !bossPhaseTwo && currentBoss != null)
+        {
+            bossPhaseTwo = true;
+
+            BossController boss =
+                currentBoss.GetComponent<BossController>();
+
+            if (boss != null)
+                boss.EnterPhaseTwo();
+
+            ShowMilestone("BOSS ENRAGED!");
         }
 
         // =========================================
         // BOSS: SCORE 200
         // =========================================
 
-        if (score >= 301f && bossActive)
+        if (score >= winScore && bossActive)
         {
             DestroyBoss();
+            WinGame();
+            return;
         }
 
         // =========================================
         // EXTRA THROWERS: SCORE 1000
         // =========================================
 
-        if (score >= 100f && !extraThrowersActive)
+        // extraThrowersDone stops this from re-enabling them every frame after 200.
+        if (score >= 100f && !extraThrowersActive && !extraThrowersDone)
         {
             extraThrowersActive = true;
 
@@ -166,6 +252,7 @@ public class GameManager : MonoBehaviour
         if (score >= 200f && extraThrowersActive)
         {
             extraThrowersActive = false;
+            extraThrowersDone = true;
 
             if (redThrower != null)
                 redThrower.SetActive(false);
@@ -270,6 +357,73 @@ public class GameManager : MonoBehaviour
     // SCORE UI
     // =============================================
 
+    public void AddScore(float amount)
+    {
+        if (gameOver)
+            return;
+
+        score += amount;
+
+        UpdateScoreUI();
+    }
+
+    // =============================================
+    // TURRETS
+    // =============================================
+
+    void StartTurrets()
+    {
+        turretsSpawned = true;
+
+        foreach (Turret turret in turrets)
+        {
+            if (turret != null)
+                turret.enabled = true;
+        }
+
+        ShowMilestone("TURRETS ONLINE!");
+    }
+
+    void StopTurrets()
+    {
+        foreach (Turret turret in turrets)
+        {
+            if (turret != null)
+                turret.StopFiring();
+        }
+    }
+
+    // =============================================
+    // COLLECTIBLE SPAWN
+    // =============================================
+
+    void SpawnCollectible()
+    {
+        if (playerMovement == null || collectiblePrefab == null)
+            return;
+
+        Transform player = playerMovement.transform;
+
+        // Spawn on the player's movement line so every orb is reachable.
+        Vector3 spawnPosition =
+            new Vector3(
+                Random.Range(
+                    -playerMovement.arenaLimit,
+                    playerMovement.arenaLimit
+                ),
+                player.position.y,
+                player.position.z
+            );
+
+        GameObject orb =
+            Instantiate(collectiblePrefab, spawnPosition, Quaternion.identity);
+
+        Collectible collectible = orb.GetComponent<Collectible>();
+
+        if (collectible != null)
+            collectible.value = collectibleValue;
+    }
+
     void UpdateScoreUI()
     {
         if (scoreText != null)
@@ -288,12 +442,34 @@ public class GameManager : MonoBehaviour
         if (gameOver)
             return;
 
-        gameOver = true;
-
         Debug.Log(
             "GAME OVER! Score: " +
             Mathf.FloorToInt(score)
         );
+
+        EndGame("GAME OVER");
+    }
+
+    // =============================================
+    // WIN: SURVIVE THE BOSS
+    // =============================================
+
+    void WinGame()
+    {
+        if (gameOver)
+            return;
+
+        Debug.Log(
+            "YOU WIN! Score: " +
+            Mathf.FloorToInt(score)
+        );
+
+        EndGame("YOU WIN!");
+    }
+
+    void EndGame(string message)
+    {
+        gameOver = true;
 
         // Stop ALL throwers.
         Thrower[] throwers =
@@ -319,9 +495,24 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        // Show Game Over.
+        StopTurrets();
+
+        CancelInvoke(nameof(HideMilestone));
+        HideMilestone();
+
+        // Show Game Over / Win.
         if (gameOverText != null)
         {
+            TextMeshProUGUI text =
+                gameOverText.GetComponentInChildren<TextMeshProUGUI>(true);
+
+            if (text != null)
+            {
+                text.text =
+                    message + "\nScore: " +
+                    Mathf.FloorToInt(score);
+            }
+
             gameOverText.SetActive(true);
         }
 
@@ -330,6 +521,9 @@ public class GameManager : MonoBehaviour
         {
             restartButton.SetActive(true);
         }
+
+        // Freezes projectiles, splits, collectibles and the player until restart.
+        Time.timeScale = 0f;
     }
 
     // =============================================
@@ -338,6 +532,8 @@ public class GameManager : MonoBehaviour
 
     public void RestartGame()
     {
+        Time.timeScale = 1f;
+
         SceneManager.LoadScene(
             SceneManager.GetActiveScene().buildIndex
         );
