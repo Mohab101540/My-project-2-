@@ -61,6 +61,9 @@ public class GameManager : MonoBehaviour
     private bool bossPhaseTwo = false;
     private GameObject currentBoss;
 
+    private MenuManager menu;
+    private int orbsThisRun = 0;
+
     void Start()
     {
         score = 0f;
@@ -92,6 +95,12 @@ public class GameManager : MonoBehaviour
 
         if (milestoneText != null)
             milestoneText.SetActive(false);
+
+        // The start menu holds the game frozen until Play. Without menus the run starts at once.
+        menu = FindFirstObjectByType<MenuManager>();
+
+        if (menu != null)
+            menu.OnSceneStarted(this);
     }
 
     void Update()
@@ -367,6 +376,16 @@ public class GameManager : MonoBehaviour
         UpdateScoreUI();
     }
 
+    // Each orb is also shop currency, saved between sessions.
+    public void CollectOrb()
+    {
+        if (gameOver)
+            return;
+
+        orbsThisRun++;
+        ShopData.AddOrbs(1);
+    }
+
     // =============================================
     // TURRETS
     // =============================================
@@ -447,7 +466,7 @@ public class GameManager : MonoBehaviour
             Mathf.FloorToInt(score)
         );
 
-        EndGame("GAME OVER");
+        EndGame("GAME OVER", false);
     }
 
     // =============================================
@@ -464,10 +483,10 @@ public class GameManager : MonoBehaviour
             Mathf.FloorToInt(score)
         );
 
-        EndGame("YOU WIN!");
+        EndGame("YOU WIN!", true);
     }
 
-    void EndGame(string message)
+    void EndGame(string message, bool won)
     {
         gameOver = true;
 
@@ -500,8 +519,14 @@ public class GameManager : MonoBehaviour
         CancelInvoke(nameof(HideMilestone));
         HideMilestone();
 
-        // Show Game Over / Win.
-        if (gameOverText != null)
+        ShopData.Save();
+
+        // The menus' Game Over / Win screen replaces the old GameOverText and RestartButton.
+        if (menu != null)
+        {
+            menu.ShowEndScreen(won, Mathf.FloorToInt(score), orbsThisRun);
+        }
+        else if (gameOverText != null)
         {
             TextMeshProUGUI text =
                 gameOverText.GetComponentInChildren<TextMeshProUGUI>(true);
@@ -517,7 +542,7 @@ public class GameManager : MonoBehaviour
         }
 
         // Show Restart button.
-        if (restartButton != null)
+        if (menu == null && restartButton != null)
         {
             restartButton.SetActive(true);
         }

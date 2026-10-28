@@ -32,6 +32,7 @@ public class Collectible : MonoBehaviour
         if (gameManager != null)
         {
             gameManager.AddScore(value);
+            gameManager.CollectOrb();
         }
 
         Destroy(gameObject);
