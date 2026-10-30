@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 
 public class GameManager : MonoBehaviour
@@ -11,6 +13,19 @@ public class GameManager : MonoBehaviour
     [Header("Score")]
     public TextMeshProUGUI scoreText;
     public float scorePerSecond = 10f;
+
+    [Header("HUD")]
+    public TextMeshProUGUI bestText;
+    public TextMeshProUGUI goalText;
+    public TextMeshProUGUI controlsHintText;
+
+    [Header("Hit Feedback")]
+    public float shakeDuration = 0.35f;
+    public float shakeStrength = 0.4f;
+
+    [Header("Lane Barrier")]
+    public GameObject barrierPrefab; // Assets/prefabs/LaneBarrier
+    public float barrierUnlockScore = 100f;
 
     [Header("Main Thrower")]
     public Thrower mainThrower;
@@ -63,15 +78,33 @@ public class GameManager : MonoBehaviour
 
     private MenuManager menu;
     private int orbsThisRun = 0;
+    private bool barrierSpawned = false;
+    private int bestScore;
+
+    const string HighScoreKey = "HighScore";
+
+    // Best score ever, saved in PlayerPrefs so it survives closing the app.
+    public static int HighScore => PlayerPrefs.GetInt(HighScoreKey, 0);
 
     void Start()
     {
         score = 0f;
+        bestScore = HighScore;
 
         // The previous run froze time on game over / win.
         Time.timeScale = 1f;
 
         playerMovement = FindFirstObjectByType<PlayerMovement>();
+
+        if (goalText != null)
+            goalText.text = "Survive the boss - reach " + Mathf.FloorToInt(winScore);
+
+        if (controlsHintText != null)
+        {
+            controlsHintText.text = Application.isMobilePlatform
+                ? "Swipe to move   |   FLIP to backflip   |   Grab green orbs"
+                : "A / D to move   |   Space to backflip   |   Grab green orbs";
+        }
 
         UpdateScoreUI();
 
@@ -193,6 +226,11 @@ public class GameManager : MonoBehaviour
         if (score >= turretUnlockScore && !turretsSpawned && !bossActive)
         {
             StartTurrets();
+        }
+
+        if (score >= barrierUnlockScore && !barrierSpawned)
+        {
+            SpawnBarrier();
         }
 
         // =========================================
@@ -328,6 +366,37 @@ public class GameManager : MonoBehaviour
         ShowMilestone(
             "BOSS BATTLE!"
         );
+
+        GameAudio.Play(GameAudio.Sound.Boss);
+    }
+
+    // =============================================
+    // LANE BARRIER
+    // =============================================
+
+    void SpawnBarrier()
+    {
+        barrierSpawned = true;
+
+        if (barrierPrefab == null || playerMovement == null)
+            return;
+
+        Transform player = playerMovement.transform;
+
+        // Starts at the far end of the lane from the player so it never appears on top of them.
+        float x = player.position.x > 0f ? -playerMovement.arenaLimit : playerMovement.arenaLimit;
+
+        GameObject barrier =
+            Instantiate(
+                barrierPrefab,
+                new Vector3(x, barrierPrefab.transform.position.y, player.position.z),
+                Quaternion.identity
+            );
+
+        LaneBarrier laneBarrier = barrier.GetComponent<LaneBarrier>();
+
+        if (laneBarrier != null)
+            laneBarrier.limit = playerMovement.arenaLimit;
     }
 
     // =============================================
@@ -377,13 +446,18 @@ public class GameManager : MonoBehaviour
     }
 
     // Each orb is also shop currency, saved between sessions.
-    public void CollectOrb()
+    public void CollectOrb(Vector3 position, float value)
     {
         if (gameOver)
             return;
 
         orbsThisRun++;
         ShopData.AddOrbs(1);
+
+        if (scoreText != null)
+            ScorePopup.Show(scoreText.canvas, position, "+" + Mathf.RoundToInt(value));
+
+        GameAudio.Play(GameAudio.Sound.Collect);
     }
 
     // =============================================
@@ -448,7 +522,13 @@ public class GameManager : MonoBehaviour
         if (scoreText != null)
         {
             scoreText.text =
-                Mathf.FloorToInt(score).ToString();
+                "Score: " + Mathf.FloorToInt(score);
+        }
+
+        if (bestText != null)
+        {
+            bestText.text =
+                "Best: " + Mathf.Max(bestScore, Mathf.FloorToInt(score));
         }
     }
 
@@ -466,7 +546,58 @@ public class GameManager : MonoBehaviour
             Mathf.FloorToInt(score)
         );
 
+        GameAudio.Play(GameAudio.Sound.Hit);
+        PlayHitFeedback();
+
         EndGame("GAME OVER", false);
+    }
+
+    // =============================================
+    // HIT FEEDBACK
+    // =============================================
+
+    // Camera shake, red flash and a phone buzz. Public so a future shield hit can reuse it.
+    public void PlayHitFeedback()
+    {
+        StartCoroutine(HitFeedbackRoutine());
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        Handheld.Vibrate();
+#endif
+    }
+
+    // Unscaled time: a hit freezes the game straight after.
+    IEnumerator HitFeedbackRoutine()
+    {
+        Transform cam = Camera.main != null ? Camera.main.transform : null;
+        Vector3 camStart = cam != null ? cam.localPosition : Vector3.zero;
+        Color red = new Color(1f, 0f, 0f, 0.45f);
+        Image flash = null;
+
+        if (scoreText != null)
+        {
+            flash = UIFactory.Panel(scoreText.canvas.transform, "HitFlash", red).GetComponent<Image>();
+            flash.raycastTarget = false;
+        }
+
+        for (float t = 0f; t < shakeDuration; t += Time.unscaledDeltaTime)
+        {
+            float fade = 1f - t / shakeDuration;
+
+            if (cam != null)
+                cam.localPosition = camStart + Random.insideUnitSphere * shakeStrength * fade;
+
+            if (flash != null)
+                flash.color = new Color(red.r, red.g, red.b, red.a * fade);
+
+            yield return null;
+        }
+
+        if (cam != null)
+            cam.localPosition = camStart;
+
+        if (flash != null)
+            Destroy(flash.gameObject);
     }
 
     // =============================================
@@ -519,7 +650,14 @@ public class GameManager : MonoBehaviour
         CancelInvoke(nameof(HideMilestone));
         HideMilestone();
 
+        if (Mathf.FloorToInt(score) > HighScore)
+            PlayerPrefs.SetInt(HighScoreKey, Mathf.FloorToInt(score));
+
+        // Also writes the high score to disk.
         ShopData.Save();
+
+        GameAudio.StopMusic();
+        GameAudio.Play(won ? GameAudio.Sound.Win : GameAudio.Sound.Lose);
 
         // The menus' Game Over / Win screen replaces the old GameOverText and RestartButton.
         if (menu != null)
@@ -535,7 +673,8 @@ public class GameManager : MonoBehaviour
             {
                 text.text =
                     message + "\nScore: " +
-                    Mathf.FloorToInt(score);
+                    Mathf.FloorToInt(score) +
+                    "\nBest: " + HighScore;
             }
 
             gameOverText.SetActive(true);

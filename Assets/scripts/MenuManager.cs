@@ -214,7 +214,7 @@ public class MenuManager : MonoBehaviour
 
         resultText.text = won ? "YOU WIN!" : "GAME OVER";
         resultText.color = won ? new Color(0.3f, 1f, 0.4f) : new Color(1f, 0.3f, 0.25f);
-        finalScoreText.text = "Score: " + score;
+        finalScoreText.text = "Score: " + score + "     Best: " + GameManager.HighScore;
         orbsEarnedText.text = "Orbs collected: " + orbsThisRun + "   (total " + ShopData.Orbs + ")";
 
         ShowOnly(endPanel);

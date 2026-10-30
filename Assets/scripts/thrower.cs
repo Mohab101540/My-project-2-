@@ -95,6 +95,7 @@ public class Thrower : MonoBehaviour
             if (preparationTimer >= warningTime)
             {
                 ThrowProjectile();
+                GameAudio.Play(GameAudio.Sound.Throw);
 
                 preparingThrow = false;
                 preparationTimer = 0f;

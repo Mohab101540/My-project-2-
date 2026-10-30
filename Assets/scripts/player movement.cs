@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.UI; // Needed for UI button
 
@@ -15,8 +17,9 @@ public class PlayerMovement : MonoBehaviour
     [Tooltip("How far (as a fraction of screen width) a finger must slide to start moving.")]
     public float swipeThreshold = 0.03f;
 
-    private bool touching = false;
+    private int moveTouchId = -1;
     private Vector2 touchStartPosition;
+    private static readonly List<RaycastResult> uiHits = new List<RaycastResult>();
     private Rigidbody rb;
     private float lastFlipTime = -100f;
     private float horizontal = 0f;
@@ -79,19 +82,30 @@ public class PlayerMovement : MonoBehaviour
         // =========================================
         // TOUCH CONTROLS
         // =========================================
+        // One finger steers. A finger that lands on a button (FLIP, pause) never steers,
+        // so tapping FLIP doesn't move the player and a second finger can flip mid-swipe.
         if (Touchscreen.current != null)
         {
-            var touch = Touchscreen.current.primaryTouch;
+            bool steeringFingerDown = false;
 
-            if (touch.press.isPressed)
+            foreach (var touch in Touchscreen.current.touches)
             {
+                if (!touch.press.isPressed)
+                    continue;
+
+                int id = touch.touchId.ReadValue();
                 Vector2 currentTouchPosition = touch.position.ReadValue();
 
-                if (!touching)
+                if (moveTouchId == -1 && touch.press.wasPressedThisFrame && !IsOverUI(currentTouchPosition))
                 {
-                    touching = true;
+                    moveTouchId = id;
                     touchStartPosition = currentTouchPosition;
                 }
+
+                if (id != moveTouchId)
+                    continue;
+
+                steeringFingerDown = true;
 
                 float threshold = Screen.width * swipeThreshold;
                 float deltaX = currentTouchPosition.x - touchStartPosition.x;
@@ -113,11 +127,20 @@ public class PlayerMovement : MonoBehaviour
                     horizontal = 0f;
                 }
             }
-            else
-            {
-                touching = false;
-            }
+
+            if (!steeringFingerDown)
+                moveTouchId = -1;
         }
+    }
+
+    bool IsOverUI(Vector2 screenPosition)
+    {
+        if (EventSystem.current == null)
+            return false;
+
+        PointerEventData pointer = new PointerEventData(EventSystem.current) { position = screenPosition };
+        EventSystem.current.RaycastAll(pointer, uiHits);
+        return uiHits.Count > 0;
     }
 
     // =========================================
