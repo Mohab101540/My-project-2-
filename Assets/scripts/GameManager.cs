@@ -119,9 +119,12 @@ public class GameManager : MonoBehaviour
         bossActive = false;
         currentBoss = null;
 
-        // Hide Game Over UI.
+        // Hide Game Over UI. Its Canvas must be on, or the text can never appear.
         if (gameOverText != null)
+        {
+            gameOverText.transform.root.gameObject.SetActive(true);
             gameOverText.SetActive(false);
+        }
 
         if (restartButton != null)
             restartButton.SetActive(false);

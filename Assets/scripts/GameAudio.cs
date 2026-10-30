@@ -1,40 +1,24 @@
 using UnityEngine;
 
-// Every game sound. Sits on the GameManager object; other scripts call GameAudio.Play(...).
+// Every game sound. Each one is an AudioSource object in the Hierarchy under "Audio";
+// this script sits on the GameManager object and other scripts call GameAudio.Play(...).
 public class GameAudio : MonoBehaviour
 {
     public enum Sound { Throw, Hit, Collect, Boss, Win, Lose }
 
-    public AudioClip throwClip;
-    public AudioClip hitClip;
-    public AudioClip collectClip;
-    public AudioClip bossClip;
-    public AudioClip winClip;
-    public AudioClip loseClip;
-    public AudioClip music;
-    [Range(0f, 1f)] public float throwVolume = 0.4f;
-    [Range(0f, 1f)] public float musicVolume = 0.3f;
+    public AudioSource throwSound;
+    public AudioSource hitSound;
+    public AudioSource collectSound;
+    public AudioSource bossSound;
+    public AudioSource winSound;
+    public AudioSource loseSound;
+    public AudioSource music; // Plays and loops by itself, set on its AudioSource.
 
     static GameAudio instance;
-
-    private AudioSource sfx;
-    private AudioSource musicSource;
 
     void Awake()
     {
         instance = this;
-
-        sfx = gameObject.AddComponent<AudioSource>();
-        sfx.playOnAwake = false;
-
-        musicSource = gameObject.AddComponent<AudioSource>();
-        musicSource.playOnAwake = false;
-        musicSource.loop = true;
-        musicSource.volume = musicVolume;
-        musicSource.clip = music;
-
-        if (music != null)
-            musicSource.Play();
     }
 
     public static void Play(Sound sound)
@@ -44,24 +28,25 @@ public class GameAudio : MonoBehaviour
 
         switch (sound)
         {
-            case Sound.Throw: instance.PlayClip(instance.throwClip, instance.throwVolume); break;
-            case Sound.Hit: instance.PlayClip(instance.hitClip, 1f); break;
-            case Sound.Collect: instance.PlayClip(instance.collectClip, 0.8f); break;
-            case Sound.Boss: instance.PlayClip(instance.bossClip, 1f); break;
-            case Sound.Win: instance.PlayClip(instance.winClip, 1f); break;
-            case Sound.Lose: instance.PlayClip(instance.loseClip, 1f); break;
+            case Sound.Throw: PlaySource(instance.throwSound); break;
+            case Sound.Hit: PlaySource(instance.hitSound); break;
+            case Sound.Collect: PlaySource(instance.collectSound); break;
+            case Sound.Boss: PlaySource(instance.bossSound); break;
+            case Sound.Win: PlaySource(instance.winSound); break;
+            case Sound.Lose: PlaySource(instance.loseSound); break;
         }
     }
 
     public static void StopMusic()
     {
-        if (instance != null)
-            instance.musicSource.Stop();
+        if (instance != null && instance.music != null)
+            instance.music.Stop();
     }
 
-    void PlayClip(AudioClip clip, float volume)
+    // PlayOneShot, not Play: quick repeats like throws overlap instead of cutting each other off.
+    static void PlaySource(AudioSource source)
     {
-        if (clip != null)
-            sfx.PlayOneShot(clip, volume);
+        if (source != null)
+            source.PlayOneShot(source.clip);
     }
 }
