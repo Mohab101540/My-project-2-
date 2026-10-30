@@ -43,11 +43,6 @@ public class PlayerMovement : MonoBehaviour
         // Spin once over the whole time in the air.
         float takeoffSpeed = jumpForce / rb.mass;
         flipDuration = 2f * takeoffSpeed / Mathf.Abs(Physics.gravity.y);
-
-        if (jumpButton != null)
-        {
-            jumpButton.onClick.AddListener(TryJump);
-        }
     }
 
     void Update()
@@ -222,7 +217,8 @@ public class PlayerMovement : MonoBehaviour
         return grounded && !flipping;
     }
 
-    void TryJump()
+    // Also called by the FLIP button's OnClick() in the Inspector.
+    public void TryJump()
     {
         bool cooledDown = Time.time - lastFlipTime >= flipCooldown;
 

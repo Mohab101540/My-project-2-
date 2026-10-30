@@ -4,8 +4,9 @@ using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 // Every screen outside the arena: start menu, controls, shop, pause, game over / win.
-// Lives on the "Menus" canvas built by Tools > Dodge Game > Set Up Menus.
-// The menus are in the main scene: Restart reloads straight into a run, Main Menu reloads to the menu.
+// Lives on the "Menus" canvas in the main scene. Every button calls these public methods
+// from its OnClick() list in the Inspector.
+// Restart reloads straight into a run, Main Menu reloads to the menu.
 public class MenuManager : MonoBehaviour
 {
     [System.Serializable]
@@ -15,16 +16,6 @@ public class MenuManager : MonoBehaviour
         public string displayName;
         public int price;
         public Color color;
-
-        public ShopColour() { }
-
-        public ShopColour(string id, string displayName, int price, Color color)
-        {
-            this.id = id;
-            this.displayName = displayName;
-            this.price = price;
-            this.color = color;
-        }
     }
 
     enum State { MainMenu, Playing, Paused, Ended }
@@ -38,44 +29,19 @@ public class MenuManager : MonoBehaviour
     public Button pauseButton;
 
     [Header("Main Menu")]
-    public Button playButton;
-    public Button shopButton;
-    public Button controlsButton;
-    public Button quitButton;
     public TextMeshProUGUI menuOrbsText;
-
-    [Header("Controls")]
-    public Button controlsBackButton;
-
-    [Header("Pause")]
-    public Button resumeButton;
-    public Button pauseRestartButton;
-    public Button pauseMainMenuButton;
 
     [Header("Game Over / Win")]
     public TextMeshProUGUI resultText;
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI orbsEarnedText;
-    public Button endRestartButton;
-    public Button endMainMenuButton;
 
     [Header("Shop")]
-    public Button shopBackButton;
     public TextMeshProUGUI shopOrbsText;
     public RectTransform colourGrid;
-    public RectTransform skinGrid;
-    // The first colour is the default: free, and leaves the model's own colours untouched.
-    public ShopColour[] colours =
-    {
-        new ShopColour("default", "Classic Blue", 0, new Color(0.10f, 0.35f, 0.85f)),
-        new ShopColour("red", "Red", 5, new Color(0.85f, 0.12f, 0.12f)),
-        new ShopColour("green", "Green", 10, new Color(0.15f, 0.75f, 0.25f)),
-        new ShopColour("purple", "Purple", 15, new Color(0.55f, 0.2f, 0.85f)),
-        new ShopColour("gold", "Gold", 25, new Color(1f, 0.75f, 0.1f)),
-        new ShopColour("black", "Shadow", 40, new Color(0.08f, 0.08f, 0.1f)),
-    };
-    // Skins need new models, so they are shown as locked until those exist.
-    public string[] upcomingSkins = { "Robot Suit", "Ninja", "Astronaut" };
+    public ShopCard cardPrefab; // Assets/prefabs/ShopCard
+    [Tooltip("Colours for sale. The first is the default: free, and leaves the model's own colours untouched.")]
+    public ShopColour[] colours;
     [Tooltip("Material on the player model that the shop colour replaces.")]
     public string suitMaterialName = "Player_Suit";
 
@@ -92,24 +58,6 @@ public class MenuManager : MonoBehaviour
     private State state;
     private GameManager gameManager;
     private PlayerMovement player;
-
-    void Awake()
-    {
-        playButton.onClick.AddListener(StartRun);
-        shopButton.onClick.AddListener(OpenShop);
-        controlsButton.onClick.AddListener(() => ShowOnly(controlsPanel));
-        quitButton.onClick.AddListener(Quit);
-        controlsBackButton.onClick.AddListener(ShowMainMenu);
-        shopBackButton.onClick.AddListener(ShowMainMenu);
-
-        pauseButton.onClick.AddListener(Pause);
-        resumeButton.onClick.AddListener(Resume);
-        pauseRestartButton.onClick.AddListener(Restart);
-        pauseMainMenuButton.onClick.AddListener(MainMenu);
-
-        endRestartButton.onClick.AddListener(Restart);
-        endMainMenuButton.onClick.AddListener(MainMenu);
-    }
 
     // Called by GameManager.Start once the scene is set up.
     public void OnSceneStarted(GameManager manager)
@@ -168,7 +116,7 @@ public class MenuManager : MonoBehaviour
         pauseButton.gameObject.SetActive(state == State.Playing);
     }
 
-    void ShowMainMenu()
+    public void ShowMainMenu()
     {
         state = State.MainMenu;
         Freeze(true);
@@ -176,7 +124,12 @@ public class MenuManager : MonoBehaviour
         ShowOnly(mainMenuPanel);
     }
 
-    void StartRun()
+    public void ShowControls()
+    {
+        ShowOnly(controlsPanel);
+    }
+
+    public void StartRun()
     {
         state = State.Playing;
         ApplyEquippedColour();
@@ -184,7 +137,7 @@ public class MenuManager : MonoBehaviour
         ShowOnly(null);
     }
 
-    void Pause()
+    public void Pause()
     {
         if (state != State.Playing)
             return;
@@ -194,7 +147,7 @@ public class MenuManager : MonoBehaviour
         ShowOnly(pausePanel);
     }
 
-    void Resume()
+    public void Resume()
     {
         if (state != State.Paused)
             return;
@@ -220,19 +173,19 @@ public class MenuManager : MonoBehaviour
         ShowOnly(endPanel);
     }
 
-    void Restart()
+    public void Restart()
     {
         skipMenuOnLoad = true;
         gameManager.RestartGame();
     }
 
-    void MainMenu()
+    public void MainMenu()
     {
         skipMenuOnLoad = false;
         gameManager.RestartGame();
     }
 
-    void Quit()
+    public void Quit()
     {
         ShopData.Save();
 #if UNITY_EDITOR
@@ -256,7 +209,7 @@ public class MenuManager : MonoBehaviour
     // SHOP
     // =============================================
 
-    void OpenShop()
+    public void OpenShop()
     {
         RefreshShop();
         ShowOnly(shopPanel);
@@ -264,6 +217,9 @@ public class MenuManager : MonoBehaviour
 
     ShopColour EquippedColour()
     {
+        if (colours.Length == 0)
+            return null;
+
         string id = ShopData.GetEquipped(colours[0].id);
 
         foreach (ShopColour colour in colours)
@@ -278,7 +234,7 @@ public class MenuManager : MonoBehaviour
     void RefreshShop()
     {
         shopOrbsText.text = "Orbs: " + ShopData.Orbs;
-        string equippedId = EquippedColour().id;
+        ShopColour equippedColour = EquippedColour();
 
         // Hidden first so the grid lays out the new cards this frame, not next to the old ones.
         foreach (Transform child in colourGrid)
@@ -287,25 +243,19 @@ public class MenuManager : MonoBehaviour
             Destroy(child.gameObject);
         }
 
-        foreach (ShopColour colour in colours)
-            AddColourCard(colour, colour.id == equippedId);
-
-        if (skinGrid.childCount == 0)
-        {
-            foreach (string skin in upcomingSkins)
-                AddSkinCard(skin);
-        }
+        for (int i = 0; i < colours.Length; i++)
+            AddColourCard(i, colours[i] == equippedColour);
     }
 
-    void AddColourCard(ShopColour colour, bool equipped)
+    void AddColourCard(int index, bool equipped)
     {
-        Vector2 middle = new Vector2(0.5f, 0.5f);
-        Image card = UIFactory.Box(colourGrid, colour.displayName, middle, Vector2.zero, Vector2.zero,
-                                   new Color(0.12f, 0.14f, 0.22f));
-
-        UIFactory.Box(card.transform, "Swatch", middle, new Vector2(0f, 60f), new Vector2(120f, 120f), colour.color);
-        UIFactory.Text(card.transform, "Name", colour.displayName, 30f, middle, new Vector2(0f, -25f),
-                       new Vector2(210f, 40f), Color.white);
+        ShopColour colour = colours[index];
+        ShopCard card = Instantiate(cardPrefab, colourGrid);
+        card.name = colour.displayName;
+        card.menu = this;
+        card.colourIndex = index;
+        card.swatch.color = colour.color;
+        card.nameText.text = colour.displayName;
 
         bool owned = ShopData.IsOwned(colour.id, colour.price);
         string label;
@@ -327,14 +277,16 @@ public class MenuManager : MonoBehaviour
             buttonColour = ShopData.Orbs >= colour.price ? new Color(1f, 0.55f, 0.05f) : new Color(0.35f, 0.35f, 0.4f);
         }
 
-        Button button = UIFactory.Button(card.transform, "Button", label, middle, new Vector2(0f, -85f),
-                                         new Vector2(190f, 60f), buttonColour, 30f);
-        button.interactable = !equipped;
-        button.onClick.AddListener(() => OnColourPressed(colour));
+        card.buttonLabel.text = label;
+        card.button.image.color = buttonColour;
+        card.button.interactable = !equipped;
     }
 
-    void OnColourPressed(ShopColour colour)
+    // Called by ShopCard when its button is pressed.
+    public void BuyOrEquip(int index)
     {
+        ShopColour colour = colours[index];
+
         if (ShopData.IsOwned(colour.id, colour.price))
             ShopData.Equip(colour.id);
         else if (ShopData.TryBuy(colour.id, colour.price))
@@ -343,29 +295,14 @@ public class MenuManager : MonoBehaviour
         RefreshShop();
     }
 
-    void AddSkinCard(string skinName)
-    {
-        Vector2 middle = new Vector2(0.5f, 0.5f);
-        Image card = UIFactory.Box(skinGrid, skinName, middle, Vector2.zero, Vector2.zero,
-                                   new Color(0.12f, 0.14f, 0.22f, 0.7f));
-
-        UIFactory.Box(card.transform, "Silhouette", middle, new Vector2(0f, 45f), new Vector2(90f, 90f),
-                      new Color(0.3f, 0.3f, 0.35f));
-        UIFactory.Text(card.transform, "Lock", "?", 60f, middle, new Vector2(0f, 45f), new Vector2(90f, 90f),
-                       new Color(0.6f, 0.6f, 0.65f));
-        UIFactory.Text(card.transform, "Name", skinName, 30f, middle, new Vector2(0f, -25f),
-                       new Vector2(280f, 40f), new Color(0.75f, 0.75f, 0.8f));
-        UIFactory.Text(card.transform, "Status", "STILL IN PROGRESS", 24f, middle, new Vector2(0f, -70f),
-                       new Vector2(280f, 36f), new Color(1f, 0.6f, 0.1f));
-    }
-
     // Tints only the suit material so skin, visor and shoes keep their colours.
     void ApplyEquippedColour()
     {
-        if (player == null)
+        ShopColour colour = EquippedColour();
+
+        if (player == null || colour == null)
             return;
 
-        ShopColour colour = EquippedColour();
         bool isDefault = colour == colours[0];
         MaterialPropertyBlock block = new MaterialPropertyBlock();
 
