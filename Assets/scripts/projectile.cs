@@ -33,6 +33,8 @@ public class Projectile : MonoBehaviour
 
     [Header("Explosive")]
     public float explosionRadius = 1.8f;
+    public GameObject warningPrefab;
+    public ExplosionHazard explosionPrefab;
     public Color explosiveColor = new Color(1f, 0.45f, 0f);
 
     // Set by the thrower before Start: where the lob lands.
@@ -147,16 +149,15 @@ public class Projectile : MonoBehaviour
             projectileRenderer.material.color = explosiveColor;
 
         // Flat red disc on the floor where the lob will land.
-        warningRing = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        warningRing.name = "ExplosiveWarning";
-        Destroy(warningRing.GetComponent<Collider>());
+        warningRing =
+            Instantiate(
+                warningPrefab,
+                new Vector3(explosiveTarget.x, 0.02f, explosiveTarget.z),
+                Quaternion.identity
+            );
 
-        warningRing.transform.position =
-            new Vector3(explosiveTarget.x, 0.02f, explosiveTarget.z);
         warningRing.transform.localScale =
             new Vector3(explosionRadius * 2f, 0.01f, explosionRadius * 2f);
-        warningRing.GetComponent<Renderer>().material.color =
-            new Color(0.8f, 0f, 0f);
     }
 
     void Explode()
@@ -182,10 +183,13 @@ public class Projectile : MonoBehaviour
             }
         }
 
-        GameObject hazard = new GameObject("Explosion");
-        hazard.transform.position = new Vector3(center.x, 0.03f, center.z);
+        ExplosionHazard explosion =
+            Instantiate(
+                explosionPrefab,
+                new Vector3(center.x, 0.03f, center.z),
+                Quaternion.identity
+            );
 
-        ExplosionHazard explosion = hazard.AddComponent<ExplosionHazard>();
         explosion.blastRadius = explosionRadius;
 
         Destroy(gameObject);

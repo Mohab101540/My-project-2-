@@ -1,31 +1,29 @@
 using TMPro;
 using UnityEngine;
 
-// The "+25" that floats up from a collected orb and fades out.
+// On the ScorePopup prefab: the "+25" that floats up from a collected orb and fades out.
 public class ScorePopup : MonoBehaviour
 {
     const float Duration = 0.8f;
     const float Rise = 120f;
 
-    private TextMeshProUGUI label;
+    public TextMeshProUGUI label;
+
     private Vector2 start;
     private float age;
 
-    public static void Show(Canvas canvas, Vector3 worldPosition, string text)
+    public static void Show(ScorePopup prefab, Canvas canvas, Vector3 worldPosition, string text)
     {
-        if (canvas == null || Camera.main == null)
+        if (prefab == null || canvas == null || Camera.main == null)
             return;
+
+        ScorePopup popup = Instantiate(prefab, canvas.transform);
+        popup.label.text = text;
 
         // Anchored bottom-left, so canvas units are screen pixels divided by the canvas scale.
         Vector2 screen = Camera.main.WorldToScreenPoint(worldPosition);
-        TextMeshProUGUI label = UIFactory.Text(canvas.transform, "ScorePopup", text, 56f, Vector2.zero,
-                                               screen / canvas.scaleFactor, new Vector2(240f, 70f),
-                                               new Color(0.3f, 1f, 0.4f));
-        label.fontStyle = FontStyles.Bold;
-
-        ScorePopup popup = label.gameObject.AddComponent<ScorePopup>();
-        popup.label = label;
-        popup.start = label.rectTransform.anchoredPosition;
+        popup.start = screen / canvas.scaleFactor;
+        popup.label.rectTransform.anchoredPosition = popup.start;
     }
 
     void Update()

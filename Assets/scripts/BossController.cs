@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class BossController : MonoBehaviour
@@ -18,7 +17,7 @@ public class BossController : MonoBehaviour
     public float telegraphTime = 0.7f;
     public Color telegraphColor = new Color(1f, 0.5f, 0f);
     public float aimLineLength = 18f;
-    public float aimLineWidth = 0.15f;
+    public LineRenderer[] aimLines; // The AimLine children of the BOSS prefab, one per shot in a spread.
 
     [Header("Phase 2")]
     public float phaseTwoIntervalMultiplier = 0.6f;
@@ -37,13 +36,12 @@ public class BossController : MonoBehaviour
 
     private Renderer[] renderers;
     private Color[] baseColors;
-    private readonly List<LineRenderer> aimLines = new List<LineRenderer>();
 
     void Start()
     {
         attackTimer = attackInterval;
 
-        renderers = GetComponentsInChildren<Renderer>();
+        renderers = GetComponentsInChildren<MeshRenderer>();
         baseColors = new Color[renderers.Length];
 
         for (int i = 0; i < renderers.Length; i++)
@@ -164,7 +162,7 @@ public class BossController : MonoBehaviour
 
         for (int i = 0; i < angles.Length; i++)
         {
-            LineRenderer line = GetAimLine(i);
+            LineRenderer line = aimLines[i];
             Vector3 direction = Quaternion.Euler(0f, angles[i], 0f) * aim;
 
             line.SetPosition(0, start);
@@ -173,40 +171,10 @@ public class BossController : MonoBehaviour
         }
     }
 
-    LineRenderer GetAimLine(int index)
-    {
-        while (aimLines.Count <= index)
-        {
-            GameObject lineObject = new GameObject("BossAimLine");
-            lineObject.transform.SetParent(transform, false);
-
-            LineRenderer line = lineObject.AddComponent<LineRenderer>();
-            line.positionCount = 2;
-            line.useWorldSpace = true;
-            line.startWidth = aimLineWidth;
-            line.endWidth = aimLineWidth;
-
-            // Reuse the boss material so the line renders under URP in builds too.
-            if (renderers.Length > 0)
-            {
-                line.material = new Material(renderers[0].sharedMaterial);
-                line.material.color = telegraphColor;
-            }
-
-            line.enabled = false;
-            aimLines.Add(line);
-        }
-
-        return aimLines[index];
-    }
-
     void HideAimLines()
     {
         foreach (LineRenderer line in aimLines)
-        {
-            if (line != null)
-                line.enabled = false;
-        }
+            line.enabled = false;
     }
 
     void SetGlow(float amount)

@@ -22,6 +22,10 @@ public class GameManager : MonoBehaviour
     [Header("Hit Feedback")]
     public float shakeDuration = 0.35f;
     public float shakeStrength = 0.4f;
+    public Image hitFlash; // Hidden red overlay under GameUI; its Image colour sets the flash.
+
+    [Header("Orb Popup")]
+    public ScorePopup scorePopupPrefab; // Assets/prefabs/ScorePopup
 
     [Header("Lane Barrier")]
     public GameObject barrierPrefab; // Assets/prefabs/LaneBarrier
@@ -458,7 +462,7 @@ public class GameManager : MonoBehaviour
         ShopData.AddOrbs(1);
 
         if (scoreText != null)
-            ScorePopup.Show(scoreText.canvas, position, "+" + Mathf.RoundToInt(value));
+            ScorePopup.Show(scorePopupPrefab, scoreText.canvas, position, "+" + Mathf.RoundToInt(value));
 
         GameAudio.Play(GameAudio.Sound.Collect);
     }
@@ -574,14 +578,10 @@ public class GameManager : MonoBehaviour
     {
         Transform cam = Camera.main != null ? Camera.main.transform : null;
         Vector3 camStart = cam != null ? cam.localPosition : Vector3.zero;
-        Color red = new Color(1f, 0f, 0f, 0.45f);
-        Image flash = null;
+        Color red = hitFlash != null ? hitFlash.color : Color.clear;
 
-        if (scoreText != null)
-        {
-            flash = UIFactory.Panel(scoreText.canvas.transform, "HitFlash", red).GetComponent<Image>();
-            flash.raycastTarget = false;
-        }
+        if (hitFlash != null)
+            hitFlash.gameObject.SetActive(true);
 
         for (float t = 0f; t < shakeDuration; t += Time.unscaledDeltaTime)
         {
@@ -590,8 +590,8 @@ public class GameManager : MonoBehaviour
             if (cam != null)
                 cam.localPosition = camStart + Random.insideUnitSphere * shakeStrength * fade;
 
-            if (flash != null)
-                flash.color = new Color(red.r, red.g, red.b, red.a * fade);
+            if (hitFlash != null)
+                hitFlash.color = new Color(red.r, red.g, red.b, red.a * fade);
 
             yield return null;
         }
@@ -599,8 +599,11 @@ public class GameManager : MonoBehaviour
         if (cam != null)
             cam.localPosition = camStart;
 
-        if (flash != null)
-            Destroy(flash.gameObject);
+        if (hitFlash != null)
+        {
+            hitFlash.color = red;
+            hitFlash.gameObject.SetActive(false);
+        }
     }
 
     // =============================================

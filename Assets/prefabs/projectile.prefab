@@ -164,3 +164,9 @@ MonoBehaviour:
   bouncerMinSpeed: 7
   bouncerMaxSpeed: 12
   bouncerMaxBounces: 8
+  explosionRadius: 1.8
+  warningPrefab: {fileID: 5147127208722775956, guid: 5f2b4fc1c0a942b47bc99abf456ede5b, type: 3}
+  explosionPrefab: {fileID: 8928739086570080546, guid: 31c9ab0ad1f3f3145ae86e6ff8ce1207, type: 3}
+  explosiveColor: {r: 1, g: 0.45, b: 0, a: 1}
+  explosiveTarget: {x: 0, y: 0, z: 0}
+  maxLifetime: 10

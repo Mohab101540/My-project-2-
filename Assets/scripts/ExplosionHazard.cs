@@ -1,7 +1,7 @@
 using UnityEngine;
 
-// Spawned by an explosive projectile: a short blast flash, then a fire patch that
-// kills a grounded player for a few seconds. Jumping/backflipping over it is safe.
+// On the Explosion prefab, spawned by an explosive projectile: a short blast flash, then a fire
+// patch that kills a grounded player for a few seconds. Jumping/backflipping over it is safe.
 public class ExplosionHazard : MonoBehaviour
 {
     public float blastRadius = 1.8f;
@@ -10,8 +10,12 @@ public class ExplosionHazard : MonoBehaviour
     public float fireDuration = 2.5f;
     public float safeJumpHeight = 1.6f;
 
-    private Transform flash;
-    private Renderer fireRenderer;
+    [Header("Visuals")]
+    public Transform flash;
+    public Renderer fireRenderer;
+    public Color fireColorA = new Color(1f, 0.3f, 0f);
+    public Color fireColorB = new Color(1f, 0.75f, 0f);
+
     private Transform player;
     private GameManager gameManager;
     private float age = 0f;
@@ -26,11 +30,7 @@ public class ExplosionHazard : MonoBehaviour
 
         gameManager = FindFirstObjectByType<GameManager>();
 
-        flash = MakeVisual(PrimitiveType.Sphere, new Color(1f, 0.85f, 0.3f)).transform;
-
-        GameObject fire = MakeVisual(PrimitiveType.Cylinder, new Color(1f, 0.3f, 0f));
-        fire.transform.localScale = new Vector3(fireRadius * 2f, 0.02f, fireRadius * 2f);
-        fireRenderer = fire.GetComponent<Renderer>();
+        fireRenderer.transform.localScale = new Vector3(fireRadius * 2f, 0.02f, fireRadius * 2f);
 
         Destroy(gameObject, fireDuration);
     }
@@ -54,11 +54,7 @@ public class ExplosionHazard : MonoBehaviour
         }
 
         fireRenderer.material.color =
-            Color.Lerp(
-                new Color(1f, 0.3f, 0f),
-                new Color(1f, 0.75f, 0f),
-                Mathf.PingPong(age * 4f, 1f)
-            );
+            Color.Lerp(fireColorA, fireColorB, Mathf.PingPong(age * 4f, 1f));
 
         if (player == null || gameManager == null)
             return;
@@ -71,18 +67,5 @@ public class ExplosionHazard : MonoBehaviour
         {
             gameManager.PlayerDied();
         }
-    }
-
-    GameObject MakeVisual(PrimitiveType shape, Color color)
-    {
-        GameObject visual = GameObject.CreatePrimitive(shape);
-
-        // Visual only: damage is checked by distance, not physics.
-        Destroy(visual.GetComponent<Collider>());
-
-        visual.transform.SetParent(transform, false);
-        visual.GetComponent<Renderer>().material.color = color;
-
-        return visual;
     }
 }
