@@ -38,7 +38,7 @@ The shared team doc "Dodge Game — Team Tasks" mirrors this board.
 | E4 | Zein | High score saved (PlayerPrefs), on HUD and end screens | P2 | D3, D5 | Survives closing the app | GameManager, UI | Done (Play Mode 2026-10-30): PlayerPrefs HighScore, Best on HUD and end screen | Manual |
 | D5 | Zein | HUD: "Score: 120", goal "reach 351", controls hint | P1 | — | Readable on a phone | main scene UI | Done (Play Mode 2026-10-30) | T9 |
 | D6 | Zein | "+25" popup on orb pickup | P2 | — | Visible every pickup | GameManager, UI | Done (Play Mode 2026-10-30) | T3 |
-| D7 | Zein | Final test, 7 screenshots, 1-minute video, SUBMISSION_CHECKLIST | P1 | Z4, D1–D5 | Every checklist row has a real result | docs | Not Started | All |
+| D7 | Zein | Final test, 7 screenshots, 1-minute video | P1 | Z4, D1–D5 | Every checklist row has a real result | docs | Not Started | All |
 | C1 | Anthony | Arena art theme + quick mock-up agreed with the team | P1 | — | Team agrees on one theme | — | Not Started | Review |
 | C2 | Anthony | New themed floor; player's lane clearly marked | P1 | C1 | Lane obvious from the game camera | Plane, materials, Models | Not Started | Visual |
 | C3 | Anthony | New themed walls (same collider positions, x/z = ±10) | P1 | C1 | Look finished; colliders unchanged | LeftWall/RightWall/FrontWall/Backwall | Not Started | Visual, T1 |
